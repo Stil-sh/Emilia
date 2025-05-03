@@ -1,7 +1,3 @@
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # Токен от @BotFather
-PROXY_URL = os.getenv("PROXY_URL")  # Если нужен прокси (например, "http://proxy.example.com:3128")
+aiogram==2.25.1
+aiohttp==3.8.4
+python-dotenv==1.0.0
