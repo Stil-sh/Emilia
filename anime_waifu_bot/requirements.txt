@@ -1,0 +1,7 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # Токен от @BotFather
+PROXY_URL = os.getenv("PROXY_URL")  # Если нужен прокси (например, "http://proxy.example.com:3128")
