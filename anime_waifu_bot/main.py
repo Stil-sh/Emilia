@@ -4,7 +4,7 @@ import logging
 
 # Настройки
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="ВАШ_ТОКЕН")
+bot = Bot(token="7954452949:AAFPjobmKF43QWu6oFC2szX_xTvoc9uClkk")
 dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
