@@ -1,59 +1,46 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text
-from parser import get_danbooru_image
-from database import Database
+from scrolller_parser import ScrolllerParser
 
-# Настройки
+# Конфигурация
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="7954452949:AAFPjobmKF43QWu6oFC2szX_xTvoc9uClkk")  # ← Замените на реальный токен!
-storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
-db = Database()
+TOKEN = "7954452949:AAFPjobmKF43QWu6oFC2szX_xTvoc9uClkk"
+PROXY = "http://104.19.217.219:80"
 
-# Клавиатура категорий
-def get_categories_kb():
-    kb = types.InlineKeyboardMarkup(row_width=2)
-    categories = db.get_categories()
-    for cat_id, cat_name in categories.items():
-        kb.insert(types.InlineKeyboardButton(
-            cat_name, 
-            callback_data=f"cat_{cat_id}"
-        ))
-    return kb
+# Инициализация
+bot = Bot(token=TOKEN, proxy=PROXY)
+dp = Dispatcher(bot)
+parser = ScrolllerParser(proxy=PROXY)
 
-# Команда /start
+# Клавиатура
+start_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+start_kb.add(types.KeyboardButton("Аниме девочки"))
+start_kb.add(types.KeyboardButton("Неко"))
+
 @dp.message_handler(commands=['start'])
-async def start_cmd(message: types.Message):
-    await message.answer(
-        "🎌 Выберите категорию:",
-        reply_markup=get_categories_kb()
-    )
+async def start(message: types.Message):
+    await message.answer("Выберите категорию:", reply_markup=start_kb)
 
-# Обработка нажатия кнопки
-@dp.callback_query_handler(Text(startswith="cat_"))
-async def process_category(callback: types.CallbackQuery):
-    cat_id = callback.data.split("_")[1]
-    category = db.get_category(cat_id)
-    
-    if not category:
-        await callback.answer("Категория не найдена")
-        return
-    
+@dp.message_handler(text=["Аниме девочки", "Неко"])
+async def send_content(message: types.Message):
     try:
-        image_url = await get_danbooru_image(category['tag'])
-        await bot.send_photo(
-            chat_id=callback.message.chat.id,
-            photo=image_url,
-            caption=f"Категория: {category['name']}"
-        )
+        subreddit = "awwnime" if message.text == "Аниме девочки" else "neko"
+        posts = await parser.get_posts(subreddit, limit=3)
+        
+        for post in posts:
+            if post['type'] == 'image':
+                await bot.send_photo(
+                    chat_id=message.chat.id,
+                    photo=post['url']
+                )
+            elif post['type'] == 'gif':
+                await bot.send_animation(
+                    chat_id=message.chat.id,
+                    animation=post['url']
+                )
     except Exception as e:
-        logging.error(f"Ошибка: {e}")
-        await callback.answer("Не удалось загрузить изображение")
-    finally:
-        await callback.answer()
+        logging.error(f"Error: {e}")
+        await message.answer("Ошибка загрузки, попробуйте позже")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
