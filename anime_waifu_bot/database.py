@@ -1,20 +1,13 @@
-import sqlite3
-
 class Database:
-    def __init__(self, db_file):
-        self.connection = sqlite3.connect(db_file)
-        self.cursor = self.connection.cursor()
-        self._create_tables()
+    def __init__(self):
+        self.categories = {
+            "1": {"name": "Девушки", "tag": "rating:safe"},
+            "2": {"name": "Котики", "tag": "neko"},
+            "3": {"name": "Мейд", "tag": "maid"}
+        }
 
-    def _create_tables(self):
-        self.cursor.execute("""
-        CREATE TABLE IF NOT EXISTS favorites (
-            user_id INTEGER,
-            img_url TEXT
-        )
-        """)
-        self.connection.commit()
+    def get_categories(self):
+        return {k: v["name"] for k, v in self.categories.items()}
 
-    def add_to_favorites(self, user_id: int, img_url: str):
-        self.cursor.execute("INSERT INTO favorites VALUES (?, ?)", (user_id, img_url))
-        self.connection.commit()
+    def get_category(self, cat_id):
+        return self.categories.get(cat_id)
